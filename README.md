@@ -1,62 +1,31 @@
-# votacions
+# CardEditor
 
-Web estática para **puntuar fotos** (1–5 estrellas) con acceso restringido a un grupo de usuarios.
+Editor de fitxes per a **FotosCavet**. Aplicació web on els usuaris poden "adoptar" una fotografia i completar-ne la fitxa amb el nom comú, nom científic i un comentari.
 
 - Hosting: **GitHub Pages**
-- Backend: **Firebase** (Authentication + Firestore)
-- Orden de fotos: **aleatorio estable por usuario**
-- Se **ocultan** la media y el número de votos.
+- Backend: **Google Apps Script** (Google Sheets com a base de dades)
+- Autenticació: usuaris gestionats al full de càlcul
 
 ## Estructura
 
 ```
-/ (raíz del repo)
-├── index.html
-├── styles.css
-├── images.json          # Se genera con generate_images_manifest.py
-├── generate_images_manifest.py
-└── /images              # Copia aquí tus fotos
+/ (arrel del repo)
+├── index.html                          # Aplicació (login + galeria + editor)
+├── images.json                         # Manifest de les imatges
+├── images/                             # Fotografies
+├── google_apps_script.js               # Codi del backend (Apps Script)
+└── .github/workflows/deploy-pages.yml  # Desplegament automàtic a GitHub Pages
 ```
 
-## Pasos
+## Funcionament
 
-1. Copia tus fotos a `./images`.
-2. Ejecuta `python generate_images_manifest.py` para generar `images.json`.
-3. En Firebase:
-   - Crea proyecto y **habilita Email/Password** en Authentication.
-   - **Añade los usuarios** (no hay registro público).
-   - **Firestore**: pega las reglas de abajo.
-   - En **Authentication → Settings → Authorized domains**, añade tu dominio de GitHub Pages (p. ej., `tu-usuario.github.io`).
-4. Abre `index.html` y pega tu `firebaseConfig`.
-5. Sube el repo a GitHub y activa **Settings → Pages**.
+1. L'usuari inicia sessió amb les credencials del full de càlcul.
+2. Veu una graella amb totes les fotografies i el seu estat (lliure, adoptada per ell o per un altre).
+3. Pot fer clic en una fotografia lliure per **adoptar-la** i omplir la fitxa.
+4. Pot editar les seves fitxes o **alliberar-les** perquè un altre usuari les adopti.
 
-## Reglas de Firestore
+## Desplegament
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function isAuthed() {
-      return request.auth != null;
-    }
-
-    match /images/{imageId}/ratings/{userId} {
-      allow read: if isAuthed();
-      allow write: if isAuthed() && userId == request.auth.uid
-        && request.resource.data.stars is number
-        && request.resource.data.stars >= 1
-        && request.resource.data.stars <= 5;
-    }
-
-    match /images/{imageId} {
-      allow read: if true;
-      allow write: if false;
-    }
-  }
-}
-```
-
-## Notas
-- Cada usuario sólo puede puntuar una vez por foto (se guarda en `images/{imageId}/ratings/{uid}`).
-- Si alguien olvida la contraseña, puede usar **"¿Olvidaste tu contraseña?"** en la pantalla de login.
-- No se muestran estadísticas globales (media y nº de votos) en la UI.
+1. Puja el repo a GitHub.
+2. A **Settings > Pages**, selecciona **GitHub Actions** com a font.
+3. Cada push a `main` desplegarà automàticament el lloc.
