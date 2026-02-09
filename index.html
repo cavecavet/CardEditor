@@ -772,7 +772,8 @@
         scientificName: document.getElementById('scientificName').value,
         comment: document.getElementById('comment').value,
         fotoAuthor: document.getElementById('fotoAuthor').value,
-        cardAuthor: currentUser
+        cardAuthor: currentUserData?.displayName || currentUser,
+        username: currentUser
       };
 
       try {

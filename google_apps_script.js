@@ -253,7 +253,7 @@ function saveCard(cardData) {
       if (usersSheet) {
         var usersData = usersSheet.getDataRange().getValues();
         for (var j = 1; j < usersData.length; j++) {
-          if (usersData[j][1] === cardData.cardAuthor && usersData[j][4]) {
+          if (usersData[j][1] === cardData.username && usersData[j][4]) {
             return {
               status: "error",
               message: "Ja tens una fitxa adoptada: " + usersData[j][4] + ". Allibera-la primer."
@@ -275,8 +275,8 @@ function saveCard(cardData) {
     cardsSheet.getRange(rowIndex, 7).setValue(newCardAuthor); // Column G = Card Author
 
     // If new adoption, update the Users sheet
-    if (isNewAdoption && cardData.cardAuthor) {
-      updateUserAdoptedCard(cardData.cardAuthor, cardData.cardId);
+    if (isNewAdoption && cardData.username) {
+      updateUserAdoptedCard(cardData.username, cardData.cardId);
     }
 
     return {
@@ -299,7 +299,8 @@ function saveCardFromGet(params) {
     scientificName: params.scientificName || "",
     comment: params.comment || "",
     fotoAuthor: params.fotoAuthor || "",
-    cardAuthor: params.cardAuthor || ""
+    cardAuthor: params.cardAuthor || "",
+    username: params.username || params.cardAuthor || ""
   });
   return ContentService.createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
@@ -318,13 +319,26 @@ function unadoptCard(cardId, username) {
     var data = cardsSheet.getDataRange().getValues();
     var rowIndex = -1;
 
+    // Resolve username to displayName for comparison with stored cardAuthor
+    var usersSheet = ss.getSheetByName("Users");
+    var userDisplayName = username;
+    if (usersSheet) {
+      var usersData = usersSheet.getDataRange().getValues();
+      for (var j = 1; j < usersData.length; j++) {
+        if (usersData[j][1] === username) {
+          userDisplayName = usersData[j][3] || usersData[j][0] || username;
+          break;
+        }
+      }
+    }
+
     for (var i = 1; i < data.length; i++) {
       if (data[i][0] === cardId) {
         rowIndex = i + 1;
 
         // Only the card's author can unadopt
         var existingAuthor = data[i][6];
-        if (existingAuthor !== username) {
+        if (existingAuthor !== userDisplayName) {
           return {
             status: "error",
             message: "Només l'autor de la fitxa pot alliberar-la"
