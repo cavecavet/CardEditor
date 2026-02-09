@@ -237,13 +237,8 @@
     }
 
     .card-item.taken {
-      cursor: default;
+      cursor: pointer;
       opacity: 0.7;
-    }
-
-    .card-item.taken:hover {
-      transform: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     /* Editor Modal */
@@ -473,8 +468,7 @@
     <div class="login-box">
       <h1>Editor de Fitxes</h1>
       <div class="info-box">
-        A continuació veuràs 15 fotografies, algunes tenen el nom de l'usuari que ha "adoptat" l'espècie, d'altres estàn lliures. Si fas clic en una d'aquestes últimes podràs adoptar l'espècie simplement incorporant les dades que es demanen.
-      </div>
+        A continuació veuràs 15 fotografies, algunes tenen el nom de l'usuari que ha "adoptat" l'espècie, d'altres estàn lliures. Si fas clic en una d'aquestes últimes podràs adoptar l'espècie simplement escrivint el nom comú i el comentari i fent click al botó "Adoptar"."     </div>
       <div class="error-message" id="loginError">Usuari o contrasenya incorrectes</div>
       <form id="loginForm">
         <div class="form-group">
@@ -668,8 +662,9 @@
         const cardElement = document.createElement('div');
         cardElement.className = 'card-item';
 
-        const isAdoptedByMe = card.cardAuthor === currentUser;
-        const isAdoptedByOther = card.cardAuthor && card.cardAuthor !== currentUser;
+        const currentDisplayName = currentUserData?.displayName || currentUser;
+        const isAdoptedByMe = card.cardAuthor === currentDisplayName;
+        const isAdoptedByOther = card.cardAuthor && card.cardAuthor !== currentDisplayName;
         const isFree = !card.cardAuthor;
 
         let statusText = '';
@@ -687,6 +682,7 @@
           statusText = 'Adoptada per ' + card.cardAuthor;
           statusClass = 'status-taken';
           cardElement.classList.add('taken');
+          cardElement.onclick = () => openEditor(card);
         }
 
         const scientificName = card.scientificName || 'Nom pendent';
@@ -705,16 +701,22 @@
 
     // Open editor
     function openEditor(card) {
-      // Safety check: prevent opening cards adopted by others
-      if (card.cardAuthor && card.cardAuthor !== currentUser) return;
-
       currentEditingCard = card;
       const imageData = imagesData.find(img => img.id === card.photoId);
+      const currentDisplayName = currentUserData?.displayName || currentUser;
+      const isFree = !card.cardAuthor;
+      const isMyCard = card.cardAuthor === currentDisplayName;
+      const isViewOnly = !isFree && !isMyCard;
 
-      const isNewAdoption = !card.cardAuthor;
-      document.getElementById('modalTitle').textContent = isNewAdoption
-        ? `Adoptar fitxa ${card.cardId}`
-        : `Editar fitxa ${card.cardId}`;
+      // Title
+      if (isViewOnly) {
+        document.getElementById('modalTitle').textContent = `Fitxa ${card.cardId}`;
+      } else if (isFree) {
+        document.getElementById('modalTitle').textContent = `Adoptar fitxa ${card.cardId}`;
+      } else {
+        document.getElementById('modalTitle').textContent = `Editar fitxa ${card.cardId}`;
+      }
+
       document.getElementById('modalImage').src = imageData ? imageData.url : '';
 
       // Populate form from card data
@@ -722,14 +724,26 @@
       document.getElementById('scientificName').value = card.scientificName || '';
       document.getElementById('comment').value = card.comment || '';
       document.getElementById('fotoAuthor').value = card.fotoAuthor || '';
-      document.getElementById('cardAuthor').value = card.cardAuthor || currentUserData?.displayName || currentUser;
+      document.getElementById('cardAuthor').value = card.cardAuthor || currentDisplayName;
 
-      // Update buttons based on context
-      saveBtn.textContent = isNewAdoption ? 'Adoptar fitxa' : 'Guardar canvis';
-      unadoptBtn.style.display = isNewAdoption ? 'none' : 'inline-block';
+      // Field editability
+      document.getElementById('commonName').readOnly = isViewOnly;
+      document.getElementById('comment').readOnly = isViewOnly;
+
+      // Buttons
+      if (isViewOnly) {
+        saveBtn.style.display = 'none';
+        unadoptBtn.style.display = 'none';
+        cancelBtn.textContent = 'Tancar';
+      } else {
+        saveBtn.style.display = 'inline-block';
+        saveBtn.textContent = isFree ? 'Adoptar fitxa' : 'Guardar canvis';
+        unadoptBtn.style.display = isFree ? 'none' : 'inline-block';
+        cancelBtn.textContent = 'Cancel·lar';
+      }
 
       editorModal.classList.add('active');
-      validateForm();
+      if (!isViewOnly) validateForm();
     }
 
     // Close editor
@@ -737,6 +751,11 @@
       editorModal.classList.remove('active');
       currentEditingCard = null;
       editorForm.reset();
+      // Reset field editability
+      document.getElementById('commonName').readOnly = false;
+      document.getElementById('comment').readOnly = false;
+      saveBtn.style.display = 'inline-block';
+      cancelBtn.textContent = 'Cancel·lar';
     }
 
     // Form validation: require commonName and comment
