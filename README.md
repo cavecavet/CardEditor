@@ -24,8 +24,3 @@ Editor de fitxes per a **FotosCavet**. Aplicació web on els usuaris poden "adop
 3. Pot fer clic en una fotografia lliure per **adoptar-la** i omplir la fitxa.
 4. Pot editar les seves fitxes o **alliberar-les** perquè un altre usuari les adopti.
 
-## Desplegament
-
-1. Puja el repo a GitHub.
-2. A **Settings > Pages**, selecciona **GitHub Actions** com a font.
-3. Cada push a `main` desplegarà automàticament el lloc.
