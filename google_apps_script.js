@@ -33,7 +33,8 @@ function doPost(e) {
       scientificName: data.scientificName || "",
       comment: data.comment || "",
       fotoAuthor: data.fotoAuthor || "",
-      cardAuthor: data.cardAuthor || ""
+      cardAuthor: data.cardAuthor || "",
+      username: data.username || data.cardAuthor || ""
     });
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -231,7 +232,7 @@ function saveCard(cardData) {
 
         // Authorization: reject if card adopted by a different user
         var existingAuthor = data[i][6]; // Column G = Card Author
-        if (existingAuthor && existingAuthor !== cardData.cardAuthor) {
+        if (existingAuthor && existingAuthor !== cardData.cardAuthor && existingAuthor !== cardData.username) {
           return {
             status: "error",
             message: "Aquesta fitxa ja ha estat adoptada per " + existingAuthor
@@ -273,6 +274,7 @@ function saveCard(cardData) {
     cardsSheet.getRange(rowIndex, 3).setValue(newCommonName); // Column C = Common Name
     cardsSheet.getRange(rowIndex, 5).setValue(newComment);    // Column E = Comment
     cardsSheet.getRange(rowIndex, 7).setValue(newCardAuthor); // Column G = Card Author
+    cardsSheet.getRange(rowIndex, 8).setValue(new Date().toISOString()); // Column H = Last Modified
 
     // If new adoption, update the Users sheet
     if (isNewAdoption && cardData.username) {
@@ -338,7 +340,7 @@ function unadoptCard(cardId, username) {
 
         // Only the card's author can unadopt
         var existingAuthor = data[i][6];
-        if (existingAuthor !== userDisplayName) {
+        if (existingAuthor !== userDisplayName && existingAuthor !== username) {
           return {
             status: "error",
             message: "Només l'autor de la fitxa pot alliberar-la"

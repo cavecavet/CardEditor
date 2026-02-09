@@ -664,7 +664,6 @@
 
         const currentDisplayName = currentUserData?.displayName || currentUser;
         const isAdoptedByMe = card.cardAuthor === currentDisplayName;
-        const isAdoptedByOther = card.cardAuthor && card.cardAuthor !== currentDisplayName;
         const isFree = !card.cardAuthor;
 
         let statusText = '';
@@ -808,6 +807,7 @@
           const cardIndex = allCards.findIndex(c => c.cardId === data.cardId);
           if (cardIndex !== -1) {
             allCards[cardIndex] = { ...allCards[cardIndex], ...data };
+            currentEditingCard = allCards[cardIndex];
           }
 
           // If this was an adoption, update user data
