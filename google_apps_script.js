@@ -263,17 +263,16 @@ function saveCard(cardData) {
       }
     }
 
-    // Write card data (8 columns)
-    cardsSheet.getRange(rowIndex, 1, 1, 8).setValues([[
-      cardData.cardId,
-      data[rowIndex - 1][1], // Keep original photoId
-      cardData.commonName || "",
-      cardData.scientificName || "",
-      cardData.comment || "",
-      cardData.fotoAuthor || "",
-      cardData.cardAuthor || "",
-      new Date().toISOString()
-    ]]);
+    // Write only allowed fields: Common Name (C), Comment (E), Card Author (G).
+    // Preserve all other columns (PhotoID, ScientificName, FotoAuthor, LastModified).
+    var existingRow = data[rowIndex - 1];
+    var newCommonName = (typeof cardData.commonName !== 'undefined') ? cardData.commonName : existingRow[2];
+    var newComment = (typeof cardData.comment !== 'undefined') ? cardData.comment : existingRow[4];
+    var newCardAuthor = (typeof cardData.cardAuthor !== 'undefined') ? cardData.cardAuthor : existingRow[6];
+
+    cardsSheet.getRange(rowIndex, 3).setValue(newCommonName); // Column C = Common Name
+    cardsSheet.getRange(rowIndex, 5).setValue(newComment);    // Column E = Comment
+    cardsSheet.getRange(rowIndex, 7).setValue(newCardAuthor); // Column G = Card Author
 
     // If new adoption, update the Users sheet
     if (isNewAdoption && cardData.cardAuthor) {
@@ -339,15 +338,10 @@ function unadoptCard(cardId, username) {
       return { status: "error", message: "Fitxa no trobada: " + cardId };
     }
 
-    // Clear editable fields (keep cardId and photoId)
-    cardsSheet.getRange(rowIndex, 3, 1, 6).setValues([[
-      "", // Common Name
-      "", // Scientific Name
-      "", // Comment
-      "", // Foto Author
-      "", // Card Author
-      ""  // Last Modified
-    ]]);
+    // Clear only Common Name (C), Comment (E) and Card Author (G) to allow re-adoption.
+    cardsSheet.getRange(rowIndex, 3).setValue(""); // Column C = Common Name
+    cardsSheet.getRange(rowIndex, 5).setValue(""); // Column E = Comment
+    cardsSheet.getRange(rowIndex, 7).setValue(""); // Column G = Card Author
 
     // Clear user's adoptedCard in Users sheet
     updateUserAdoptedCard(username, "");
