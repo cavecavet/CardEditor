@@ -22,7 +22,6 @@ jobs:
         with:
           path: |
             index.html
-            editor-app.html
             images.json
             images
             README.md
